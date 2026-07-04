@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body{
+            display:flex;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+        body > div {
+            width: 33vw;  
+        }
+        table,tr,th,td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        table {
+            min-width: 40vw;
+        }
+    </style>
+</head>
+<body>
+    <div class="captions-container">
+        <button id="startTimer">start</button>
+        <button id="timeStamp">timestamp</button>
+        <p class="captions"></p>
+    </div>
+    <div>
+        <p class="current-caption"></p>
+    </div>
+    <div class="karaoke-lines-container">
+        <input type="text" id="lineInput">
+        <button id="appendLineBtn" type="button">Add Line</button>
+        <table>
+            <tr>
+                <th>שורות עם אינטרוולים</th>
+                <th>שורות</th>
+                <th>מספר שורה</th>
+            </tr>
+            <tr>
+                <td class="karaoke-lines"></td>
+                <td class="lines"></td>
+                <td class="line-num"></td>
+            </tr>
+        </table>
+        <p ></p>
+    </div>
+    <div class="lines-container">
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/P6pFdeZg8LI?si=-TSVETx3pUa8AHGj" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="youtube-vid"></iframe>
+        <p ><br></p>
+    </div>
+    <script>
+        let startTime = 0;
+        let timeStampTime = 0;
+        let lineNum = 0;
+        let inlineNum = 0;
+        let currentCaption = '' // the next two aren't important for now
+        let captionsArr = []
+        let karaokeInterim // the interim between every syllable in a single line
+        let timeStampDisplay;
+        let hours;
+        let minutes;
+        let seconds;
+        let milliseconds;
+        let isFirstTimeStamp = true;
+        let isEndofLine = false
+        function startTimer() {
+            startTime = Date.now();
+        }
+        function timeStampRun() {
+            lastTimeStampTime = timeStampTime
+            timeStampTime = Date.now() - startTime;
+            karaokeInterim = (Math.round((timeStampTime - lastTimeStampTime)/10)).toString()
+            hours = Math.floor( timeStampTime / (1000 * 60 * 60)).toString();
+            minutes = Math.floor( timeStampTime / (1000 * 60) %60).toString();
+            seconds = Math.floor( timeStampTime / 1000 % 60).toString();
+            milliseconds = Math.floor( timeStampTime%1000).toString();
+            if (hours.length === 1){
+                hours = '0' + hours;
+            }
+            if (minutes.length === 1){
+                minutes = '0' + minutes;
+            }
+            if (seconds.length === 1){
+                seconds = '0' + seconds;
+            }
+            if (milliseconds.length === 1) {
+                milliseconds = '00' + milliseconds;
+            }
+            if (milliseconds.length === 2) {
+                milliseconds = '0' + milliseconds;
+            }
+            timeStampDisplay = `${hours}:${minutes}:${seconds},${milliseconds}`;
+            if (isFirstTimeStamp){
+                p.innerText +=  `1\n${timeStampDisplay}`;
+                isFirstTimeStamp = false;
+            } else if (linesArr[lineNum]){
+                isEndofLine = linesArr[lineNum].length == inlineNum
+                if (isEndofLine){
+                    lineNum += 1;
+                    inlineNum = 0;
+                    p.innerText += ` --> ${timeStampDisplay}\n${currentCaption}\n\n${lineNum+1}\n${timeStampDisplay}`;
+                    captionsArr.push(currentCaption)
+                    currentCaption = ''
+                    parCurrentCaption.textContent = ''
+                } else {
+                    currentCaption += `{\\k${karaokeInterim}}${linesArr[lineNum][inlineNum]}`
+                    parCurrentCaption.innerText = currentCaption
+                    inlineNum += 1   
+                }
+                // if (!(lineNum == linesArrNoSpaces.length - 1 && linesArr[lineNum].length === inlineNum)){
+                //     if (linesArr[lineNum].length === inlineNum + 1){
+                //         p.innerText += ` --> ${timeStampDisplay}\n${currentCaption}\n\n${lineNum}\n${timeStampDisplay}`;
+                //         lineNum += 1;
+                //         inlineNum = 0;
+                //         captionsArr.push(currentCaption)
+                //         currentCaption = ''
+                //         parCurrentCaption.textContent = '1'
+                //     } else {
+                //         console.log(`${karaokeInterim}${linesArrNoSpaces[lineNum][inlineNum]}`)
+                //         currentCaption += `${karaokeInterim}${linesArrNoSpaces[lineNum][inlineNum]}`
+                //         /*parCurrentCaption.innerText += `${karaokeInterim}${linesArrNoSpaces[lineNum][inlineNum]}`*/
+                //         parCurrentCaption.textContent += "hello"
+                //         inlineNum += 1
+                //     }
+                // }
+            
+            /*} else 
+            } else if (!(lineNum == linesArrNoSpaces.length - 1 && linesArr[lineNum].length === inlineNum)){
+                
+               
+            } else if (!(lineNum == linesArrNoSpaces.length - 1 && linesArr[lineNum].length === inlineNum)){*/            
+            } else {
+                lineNum += 1
+                 p.innerText +=  ` --> ${timeStampDisplay}\nSubtitle text here\n\n${lineNum+1}\n${timeStampDisplay}`;
+            }
+
+
+        }
+        const start = document.getElementById('startTimer');
+        const timeStamp = document.getElementById('timeStamp');
+        const p = document.querySelector('.captions')
+        const appendLineBtn = document.querySelector('#appendLineBtn')
+        const lineInput = document.querySelector('#lineInput')
+        const tdKarLines = document.querySelector('.karaoke-lines')
+        const tdLines = document.querySelector('.lines')
+        const tdLineNum = document.querySelector('.line-num')
+        const parCurrentCaption = document.querySelector('.current-caption')
+        const youtubeVid = document.querySelector('.youtube-vid')
+        let currentLineArr
+        let linesArr = []
+        let currentLineArrNoSpaces
+        let linesArrNoSpaces = []
+        let arrSplitBySpaces = []
+        let tableLineNum = 0
+        let tdRefernceArr = [] /*פה עצרת, רצית לבנות תא לכל שורה בטבלה ולשמור את הרפרנסים כרשימה*/
+
+        
+        appendLineBtn.addEventListener("click", (e) => {
+            console.log(lineInput.value)
+            if (!(lineInput.value == '')) {
+                tableLineNum += 1
+                if ((lineInput.value).includes(";")){
+                    //To add a karaoke break with every space without removing spaces
+                    arrSplitBySpaces = (lineInput.value).split(" ")
+                    for (let i=1; i < arrSplitBySpaces.length; i++){
+                        arrSplitBySpaces[i] = " ;" + arrSplitBySpaces[i]
+                    }
+                    currentLineArr = arrSplitBySpaces.join("")
+                    currentLineArr = currentLineArr.split(";")
+                    currentLineArrNoSpaces = ((lineInput.value).replaceAll(" ",";")).split(";")
+                } else {
+                    currentLineArr = (lineInput.value).split(".")
+                    currentLineArrNoSpaces = ((lineInput.value).replaceAll(" ",".")).split(".")
+                }
+                linesArr.push(currentLineArr)
+                linesArrNoSpaces.push(currentLineArrNoSpaces)
+                tdKarLines.innerText += `${lineInput.value}\n`
+                tdLines.innerText += `${currentLineArr.join("")}\n`
+                tdLineNum.innerText += `${tableLineNum}\n`
+                lineInput.value = ""
+                console.log(linesArr)
+                console.log(linesArrNoSpaces)
+            }
+
+
+        })
+        clickEvent = new Event('click')
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "p"){
+                startTimer()
+            }
+        })
+        start.addEventListener("click", startTimer);
+        timeStamp.addEventListener("keydown", timeStampRun);      
+    </script>
+</body>
+</html>
