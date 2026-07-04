@@ -20,6 +20,14 @@
         table {
             min-width: 40vw;
         }
+        iframe {
+            position: absolute;
+            bottom: 0;
+        }
+        #timeStamp{
+            height: 400px;
+            width: 400px;
+        }
     </style>
 </head>
 <body>
@@ -49,7 +57,7 @@
         <p ></p>
     </div>
     <div class="lines-container">
-        <iframe width="560" height="315" src="https://www.youtube.com/embed/P6pFdeZg8LI?si=-TSVETx3pUa8AHGj" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen class="youtube-vid"></iframe>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/GBwt04s3DwY?si=NSXv61uQ71Go3dBt" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         <p ><br></p>
     </div>
     <script>
@@ -110,29 +118,7 @@
                     currentCaption += `{\\k${karaokeInterim}}${linesArr[lineNum][inlineNum]}`
                     parCurrentCaption.innerText = currentCaption
                     inlineNum += 1   
-                }
-                // if (!(lineNum == linesArrNoSpaces.length - 1 && linesArr[lineNum].length === inlineNum)){
-                //     if (linesArr[lineNum].length === inlineNum + 1){
-                //         p.innerText += ` --> ${timeStampDisplay}\n${currentCaption}\n\n${lineNum}\n${timeStampDisplay}`;
-                //         lineNum += 1;
-                //         inlineNum = 0;
-                //         captionsArr.push(currentCaption)
-                //         currentCaption = ''
-                //         parCurrentCaption.textContent = '1'
-                //     } else {
-                //         console.log(`${karaokeInterim}${linesArrNoSpaces[lineNum][inlineNum]}`)
-                //         currentCaption += `${karaokeInterim}${linesArrNoSpaces[lineNum][inlineNum]}`
-                //         /*parCurrentCaption.innerText += `${karaokeInterim}${linesArrNoSpaces[lineNum][inlineNum]}`*/
-                //         parCurrentCaption.textContent += "hello"
-                //         inlineNum += 1
-                //     }
-                // }
-            
-            /*} else 
-            } else if (!(lineNum == linesArrNoSpaces.length - 1 && linesArr[lineNum].length === inlineNum)){
-                
-               
-            } else if (!(lineNum == linesArrNoSpaces.length - 1 && linesArr[lineNum].length === inlineNum)){*/            
+                }         
             } else {
                 lineNum += 1
                  p.innerText +=  ` --> ${timeStampDisplay}\nSubtitle text here\n\n${lineNum+1}\n${timeStampDisplay}`;
@@ -157,10 +143,10 @@
         let arrSplitBySpaces = []
         let tableLineNum = 0
         let tdRefernceArr = [] /*פה עצרת, רצית לבנות תא לכל שורה בטבלה ולשמור את הרפרנסים כרשימה*/
+        let stringWithCorrectCommaDot = ""
 
         
         appendLineBtn.addEventListener("click", (e) => {
-            console.log(lineInput.value)
             if (!(lineInput.value == '')) {
                 tableLineNum += 1
                 if ((lineInput.value).includes(";")){
@@ -169,8 +155,8 @@
                     for (let i=1; i < arrSplitBySpaces.length; i++){
                         arrSplitBySpaces[i] = " ;" + arrSplitBySpaces[i]
                     }
-                    currentLineArr = arrSplitBySpaces.join("")
-                    currentLineArr = currentLineArr.split(";")
+                    stringWithCorrectCommaDot = arrSplitBySpaces.join("")
+                    currentLineArr = stringWithCorrectCommaDot.split(";")
                     currentLineArrNoSpaces = ((lineInput.value).replaceAll(" ",";")).split(";")
                 } else {
                     currentLineArr = (lineInput.value).split(".")
@@ -178,12 +164,11 @@
                 }
                 linesArr.push(currentLineArr)
                 linesArrNoSpaces.push(currentLineArrNoSpaces)
-                tdKarLines.innerText += `${lineInput.value}\n`
+                console.log(stringWithCorrectCommaDot.replaceAll(";", "{\\k}"))
+                tdKarLines.innerText += stringWithCorrectCommaDot.replaceAll(";", "{\\k}")
                 tdLines.innerText += `${currentLineArr.join("")}\n`
                 tdLineNum.innerText += `${tableLineNum}\n`
                 lineInput.value = ""
-                console.log(linesArr)
-                console.log(linesArrNoSpaces)
             }
 
 
@@ -195,7 +180,8 @@
             }
         })
         start.addEventListener("click", startTimer);
-        timeStamp.addEventListener("keydown", timeStampRun);      
+        timeStamp.addEventListener("keydown", timeStampRun);
+        timeStamp.addEventListener("mousedown", timeStampRun);    
     </script>
 </body>
 </html>
