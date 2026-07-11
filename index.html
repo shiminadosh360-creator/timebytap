@@ -29,15 +29,18 @@
             width: 400px;
             background-color: grey;
         }
+        .srt-container p:hover{
+            background-color: rgba(0, 0, 0, 0.2);
+        }
     </style>
 </head>
 <body>
-    <div class="captions-container">
+    <div class="srt-container">
         <button id="startTimer">start</button>
         <button id="timeStamp">timestamp</button>
-        <p class="captions"></p>
     </div>
     <div>
+        <button class="edit-btn">Edit a Line</button>
         <p class="current-caption"></p>
     </div>
     <div class="karaoke-lines-container">
@@ -62,26 +65,28 @@
         <p ><br></p>
     </div>
     <script>
-        let startTime = 0;
-        let timeStampTime = 0;
-        let lineNum = 0;
-        let inlineNum = 0;
-        let currentCaption = '' // the next two aren't important for now
-        let captionsArr = []
+        let startTime = 0; // starting the timer 
+        let timeStampTime = 0; // current time when the timeStampRun is called (timer "lap")
+        let lineNum = 0; // current line's number (increased by one with every timeStamprun())
+        let inlineNum = 0; // current position number inside a line (used for the karaoke intervals inside a caption)
+        let currentCaption = '' // the caption content (only caption, without the timing and number of caption) of a single line (which get longer with every karaoke)
+        let captionsArr = [] // an Array of all the former captions that were assigned to the srt section
         let karaokeInterim // the interim between every syllable in a single line
-        let timeStampDisplay;
+        let timeStampDisplay; // a string that contains a timer lap in the proper format of srt files.
         let hours;
         let minutes;
         let seconds;
         let milliseconds;
         let isFirstTimeStamp = true;
         let isEndofLine = false
+        let pArray = []
         function startTimer() {
             startTime = Date.now();
         }
         function timeStampRun() {
             lastTimeStampTime = timeStampTime
             timeStampTime = Date.now() - startTime;
+            //to make the interim compatible with aegisub's karaoke feature. they use 1/100 of a second for the karaoke interims.
             karaokeInterim = (Math.round((timeStampTime - lastTimeStampTime)/10)).toString()
             hours = Math.floor( timeStampTime / (1000 * 60 * 60)).toString();
             minutes = Math.floor( timeStampTime / (1000 * 60) %60).toString();
@@ -102,48 +107,101 @@
             if (milliseconds.length === 2) {
                 milliseconds = '0' + milliseconds;
             }
+
             timeStampDisplay = `${hours}:${minutes}:${seconds},${milliseconds}`;
             if (isFirstTimeStamp){
-                p.innerText +=  `1\n${timeStampDisplay}`;
+                let pCurrent = document.createElement("p")
+                pArray.push(pCurrent)
+                srtContainer.appendChild(pCurrent)
+                pArray[0].classList.toggle("p1")
+                //p.innerText +=  `1\n${timeStampDisplay}`;
+                pArray[0].innerText = `1\n${timeStampDisplay}`
                 isFirstTimeStamp = false;
             } else if (linesArr[lineNum]){
-                isEndofLine = linesArr[lineNum].length == inlineNum
+                isEndofLine = linesArr[lineNum].length == inlineNum + 1 
+                currentCaption += `{\\k${karaokeInterim}}${linesArr[lineNum][inlineNum]}`
+                parCurrentCaption.innerText = currentCaption
+                inlineNum += 1
                 if (isEndofLine){
                     lineNum += 1;
                     inlineNum = 0;
-                    p.innerText += ` --> ${timeStampDisplay}\n${currentCaption}\n\n${lineNum+1}\n${timeStampDisplay}`;
-                    captionsArr.push(currentCaption)
+                    let pCurrent = document.createElement("p")
+                    pArray.push(pCurrent)
+                    srtContainer.appendChild(pCurrent)
+                    pArray[lineNum].classList.toggle(`p${lineNum + 1}`)
+                    // Add text to the current caption paragraph - completing this caption  
+                    pArray[lineNum - 1].innerText += ` --> ${timeStampDisplay}\n${currentCaption}\n\n`
+                    // Add the beginning text to the next caption pargraph (because I need to use the timeStampDisplay on both the ending time of current caption and the starting time of the latter)
+                    pArray[lineNum].innerText += `${lineNum+1}\n${timeStampDisplay}`;
+                    captionsArr.push(currentCaption) //Not sure I'll use it
                     currentCaption = ''
                     parCurrentCaption.textContent = ''
-                } else {
-                    currentCaption += `{\\k${karaokeInterim}}${linesArr[lineNum][inlineNum]}`
-                    parCurrentCaption.innerText = currentCaption
-                    inlineNum += 1   
-                }         
+                }
+
+                
+                // currentCaption += `{\\k${karaokeInterim}}${linesArr[lineNum][inlineNum]}`
+                // parCurrentCaption.innerText = currentCaption
+                // inlineNum += 1
+                         
             } else {
                 lineNum += 1
-                 p.innerText +=  ` --> ${timeStampDisplay}\nSubtitle text here\n\n${lineNum+1}\n${timeStampDisplay}`;
+                let pCurrent = document.createElement("p")
+                pArray.push(pCurrent)
+                srtContainer.appendChild(pCurrent)
+                pArray[lineNum].classList.toggle(`p${lineNum + 1}`)
+                pArray[lineNum - 1].innerText +=  ` --> ${timeStampDisplay}\nSubtitle text here\n\n`
+                pArray[lineNum].innerText += `${lineNum+1}\n${timeStampDisplay}`;
             }
 
-
+            
         }
+        //This doen't work as it it moves on to return without waiting for an event to occur. I'm not sure if using a loop will do the job.
+        function selectLineToEdit() {
+            srtContainer.addEventListener("click", (e) => {
+                let selectedParClass
+                let selectedParContent
+                let selectedParObj
+                console.log("hi")
+                e.target.style.backgroundColor = "rgba(0, 0, 0, 0.2)"
+                selectedParContent = e.target.value
+                selectedParClass = e.target.classList
+                selectedParObj= {
+                    [selectedParClass] : selectedParContent,
+                }
+            })
+            console.log(selectedParObj)
+            return selectedParObj
+        }
+        // function editLine (e){
+            //you need to get the desirable paragraph's content by clicking it and then changing it according to the user's preference. but adding an event listener to all paragraphs will cause poor performence. so you need to try "event delegation" decribed here  https://www.javascripttutorial.net/javascript-dom/javascript-event-delegation/
+            // editBtn.addEventListener('click', () => {
+            //     let selectedParObj = selectLineToEdit()
+            // })
+        // }
+
         const start = document.getElementById('startTimer');
         const timeStamp = document.getElementById('timeStamp');
         const p = document.querySelector('.captions')
         const appendLineBtn = document.querySelector('#appendLineBtn')
         const lineInput = document.querySelector('#lineInput')
-        const tdKarLines = document.querySelector('.karaoke-lines')
-        const tdLines = document.querySelector('.lines')
-        const tdLineNum = document.querySelector('.line-num')
+        // const tdKarLines = document.querySelector('.karaoke-lines')
+        // const tdLines = document.querySelector('.lines')
+        // const tdLineNum = document.querySelector('.line-num')
+        const table = document.querySelector('table')
         const parCurrentCaption = document.querySelector('.current-caption')
-        const youtubeVid = document.querySelector('.youtube-vid')
+        // const youtubeVid = document.querySelector('.youtube-vid')
+        const editBtn = document.querySelector('.edit-btn')
+        const srtContainer = document.querySelector('.srt-container')
+        //let currentLineArr = document.querySelector('.youtube-vid')
         let currentLineArr
-        let linesArr = []
+        let linesArr = [] // an array (of arrays) of all of the captions that were provided by the user, in the 
         let currentLineArrNoSpaces
         let linesArrNoSpaces = []
         let arrSplitBySpaces = []
         let tableLineNum = 0
-        let tdRefernceArr = [] /*פה עצרת, רצית לבנות תא לכל שורה בטבלה ולשמור את הרפרנסים כרשימה*/
+        let tdReferncesArr = [] /*פה עצרת, רצית לבנות תא לכל שורה בטבלה ולשמור את הרפרנסים כרשימה*/
+        let infoArr = []
+        let tdClasses = ["karaoke-line", "regular-line", "line-number"]
         let stringWithCorrectCommaDot = ""
 
         
@@ -158,17 +216,33 @@
                     }
                     stringWithCorrectCommaDot = arrSplitBySpaces.join("")
                     currentLineArr = stringWithCorrectCommaDot.split(";")
-                    currentLineArrNoSpaces = ((lineInput.value).replaceAll(" ",";")).split(";")
+                    //currentLineArrNoSpaces = ((lineInput.value).replaceAll(" ",";")).split(";")
                 } else {
                     currentLineArr = (lineInput.value).split(".")
-                    currentLineArrNoSpaces = ((lineInput.value).replaceAll(" ",".")).split(".")
+                    //currentLineArrNoSpaces = ((lineInput.value).replaceAll(" ",".")).split(".")
                 }
                 linesArr.push(currentLineArr)
-                linesArrNoSpaces.push(currentLineArrNoSpaces)
-                console.log(stringWithCorrectCommaDot.replaceAll(";", "{\\k}"))
-                tdKarLines.innerText += stringWithCorrectCommaDot.replaceAll(";", "{\\k}")
-                tdLines.innerText += `${currentLineArr.join("")}\n`
-                tdLineNum.innerText += `${tableLineNum}\n`
+                //linesArrNoSpaces.push(currentLineArrNoSpaces)
+                let currentTr = document.createElement("tr")
+                table.appendChild(currentTr)
+                let currentTdsObj = {
+                    karLine: "{\\k}" + stringWithCorrectCommaDot.replaceAll(";", "{\\k}"),
+                    regLine: `${currentLineArr.join("")}`,
+                    lineNum: `${tableLineNum}`
+                }
+                infoArr.push(currentTdsObj)
+                let i = 0
+                for (let key in currentTdsObj){
+                    let currentTd = document.createElement("td")
+                    currentTd.classList.toggle(`${tdClasses[i]}`)
+                    i++
+                    //tableLineNum starts with 1, but array index starts with 0, so I subtracted tableLineNum by 1 to get the proper index.
+                    currentTd.textContent = infoArr[tableLineNum - 1][key]
+                    currentTr.appendChild(currentTd)
+                }
+                // tdKarLines.innerText += stringWithCorrectCommaDot.replaceAll(";", "{\\k}")
+                // tdLines.innerText += `${currentLineArr.join("")}\n`
+                // tdLineNum.innerText += `${tableLineNum}\n`
                 lineInput.value = ""
             }
 
@@ -180,9 +254,16 @@
                 startTimer()
             }
         })
-        start.addEventListener("click", startTimer);
-        timeStamp.addEventListener("keydown", timeStampRun);
-        timeStamp.addEventListener("click", timeStampRun);    
+        start.addEventListener("click", () => {
+            startTimer()
+            timeStamp.focus()
+            return
+        });
+        start.addEventListener("keydown", timeStampRun);//it was originally timestamp and not start I changed it temporarily
+        timeStamp.addEventListener("click", timeStampRun);
+        editBtn.addEventListener('click', () => {
+            let selectedParObj = selectLineToEdit()
+        })        
     </script>
 </body>
 </html>
