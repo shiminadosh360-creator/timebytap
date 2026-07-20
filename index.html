@@ -36,11 +36,14 @@
 </head>
 <body>
     <div class="srt-container">
+        <div class="timer"></div>
         <button id="startTimer">start</button>
         <button id="timeStamp">timestamp</button>
     </div>
     <div>
         <button class="edit-btn">Edit a Line</button>
+        <button class="stop-btn">Stop Timer</button>
+        <button class="rerun-subtitle-btn">Rerun Last Subtitle</button>
         <p class="current-caption"></p>
     </div>
     <div class="karaoke-lines-container">
@@ -65,6 +68,7 @@
         <p ><br></p>
     </div>
     <script>
+        //https://youtu.be/d8-LGhKtzRw?si=8LwIS71R9n6ws68p timer
         let startTime = 0; // starting the timer 
         let timeStampTime = 0; // current time when the timeStampRun is called (timer "lap")
         let lineNum = 0; // current line's number (increased by one with every timeStamprun())
@@ -80,35 +84,36 @@
         let isFirstTimeStamp = true;
         let isEndofLine = false
         let pArray = []
+
+
+        let isRunning = false
+        let timer = null
+        let elapsedTime = 0
+        let karaokeInterimArr = []// ??????????????
+        let timeStampTimeArr = []
+        let isReRun = false
         function startTimer() {
-            startTime = Date.now();
+            if (!isRunning){
+                startTime = Date.now() - elapsedTime;
+                timer = setInterval(timerUpdate, 10)
+                isRunning = true
+            }
         }
         function timeStampRun() {
+            // lastTimeStampTime = elapsedTime
+            // elapsedTime = Date.now() - startTime
+            // timeStampDisplay = getTimeStampDisplay(elapsedTime)
+            // karaokeInterim = getKaraokeInterim(elapsedTime, lastTimeStampTime)
             lastTimeStampTime = timeStampTime
-            timeStampTime = Date.now() - startTime;
-            //to make the interim compatible with aegisub's karaoke feature. they use 1/100 of a second for the karaoke interims.
-            karaokeInterim = (Math.round((timeStampTime - lastTimeStampTime)/10)).toString()
-            hours = Math.floor( timeStampTime / (1000 * 60 * 60)).toString();
-            minutes = Math.floor( timeStampTime / (1000 * 60) %60).toString();
-            seconds = Math.floor( timeStampTime / 1000 % 60).toString();
-            milliseconds = Math.floor( timeStampTime%1000).toString();
-            if (hours.length === 1){
-                hours = '0' + hours;
+            // timeStampTime = Date.now() - startTime;
+            timeStampTime = elapsedTime;
+            if (isReRun){
+                isReRun = false
+                return
             }
-            if (minutes.length === 1){
-                minutes = '0' + minutes;
-            }
-            if (seconds.length === 1){
-                seconds = '0' + seconds;
-            }
-            if (milliseconds.length === 1) {
-                milliseconds = '00' + milliseconds;
-            }
-            if (milliseconds.length === 2) {
-                milliseconds = '0' + milliseconds;
-            }
+            timeStampDisplay = getTimeStampDisplay(timeStampTime)
+            karaokeInterim = getKaraokeInterim(timeStampTime, lastTimeStampTime)
 
-            timeStampDisplay = `${hours}:${minutes}:${seconds},${milliseconds}`;
             if (isFirstTimeStamp){
                 let pCurrent = document.createElement("p")
                 pArray.push(pCurrent)
@@ -116,12 +121,21 @@
                 pArray[0].classList.toggle("p1")
                 //p.innerText +=  `1\n${timeStampDisplay}`;
                 pArray[0].innerText = `1\n${timeStampDisplay}`
+                // if ((linesArr)) {
+                //     console.log(linesArr)
+                //     parCurrentCaption.textContent = linesArr[0][0]
+                // }
                 isFirstTimeStamp = false;
+
             } else if (linesArr[lineNum]){
                 isEndofLine = linesArr[lineNum].length == inlineNum + 1 
                 currentCaption += `{\\k${karaokeInterim}}${linesArr[lineNum][inlineNum]}`
-                parCurrentCaption.innerText = currentCaption
+                console.log(currentCaption)
                 inlineNum += 1
+                parCurrentCaption.textContent = linesArr[lineNum][inlineNum]
+                // parCurrentCaption.innerText = currentCaption
+                // inlineNum += 1
+
                 if (isEndofLine){
                     lineNum += 1;
                     inlineNum = 0;
@@ -133,9 +147,11 @@
                     pArray[lineNum - 1].innerText += ` --> ${timeStampDisplay}\n${currentCaption}\n\n`
                     // Add the beginning text to the next caption pargraph (because I need to use the timeStampDisplay on both the ending time of current caption and the starting time of the latter)
                     pArray[lineNum].innerText += `${lineNum+1}\n${timeStampDisplay}`;
+                    timeStampTimeArr.push(timeStampTime)
                     captionsArr.push(currentCaption) //Not sure I'll use it
                     currentCaption = ''
-                    parCurrentCaption.textContent = ''
+                    parCurrentCaption.textContent = linesArr[lineNum][inlineNum]
+                    // parCurrentCaption.textContent = ''
                 }
 
                 
@@ -155,7 +171,67 @@
 
             
         }
+        function getTimeStampDisplay(someTime){
+            hours = Math.floor( someTime / (1000 * 60 * 60)).toString();
+            minutes = Math.floor( someTime / (1000 * 60) %60).toString();
+            seconds = Math.floor( someTime / 1000 % 60).toString();
+            milliseconds = Math.floor( someTime%1000).toString();
+            if (hours.length === 1){
+                hours = '0' + hours;
+            }
+            if (minutes.length === 1){
+                minutes = '0' + minutes;
+            }
+            if (seconds.length === 1){
+                seconds = '0' + seconds;
+            }
+            if (milliseconds.length === 1) {
+                milliseconds = '00' + milliseconds;
+            }
+            if (milliseconds.length === 2) {
+                milliseconds = '0' + milliseconds;
+            }
+
+            let timeStampDisplay = `${hours}:${minutes}:${seconds},${milliseconds}`;
+            return timeStampDisplay
+        }
+        function stopTimer(){
+            if (isRunning){
+                clearInterval(timer);
+                elapsedTime = Date.now() - startTime;
+                isRunning = false;
+                //console.log(elapsedTime)
+            }
+        }
+        function timerUpdate() {
+            elapsedTime = Date.now() - startTime
+            let humanReadableTime = getTimeStampDisplay(elapsedTime)
+            timerDisplay.textContent = humanReadableTime
+        }
+        function getKaraokeInterim(timeStampTime, lastTimeStampTime){
+            //to make the interim compatible with aegisub's karaoke feature. they use 1/100 of a second for the karaoke interims.
+            let karaokeInterim = (Math.round((timeStampTime - lastTimeStampTime)/10))
+            karaokeInterimArr.push(karaokeInterim) // ?????????
+            return karaokeInterim.toString()
+        }
+
+        function reRunSubtitle() {
+            isReRun = true
+            elapsedTime = timeStampTimeArr.at(-1)
+            currentCaption = ''
+            inlineNum = 0
+            parCurrentCaption.textContent = linesArr[lineNum][inlineNum]
+            let humanReadableTime = getTimeStampDisplay(elapsedTime)
+            timerDisplay.textContent = humanReadableTime
+            //To make lastTimeStampTime 0
+            // timeStampTime = timeStampTimeArr.at(-1)
+        }
+
+
         //This doen't work as it it moves on to return without waiting for an event to occur. I'm not sure if using a loop will do the job.
+        // Note so that I won't forget - It might be much more useful to add the subtitles after setting the timing of the srt subtitles (including the karaoke interims). that way one mistake won't harm the subtitles coming afterwards.
+        //maybe create a huge array of karaoke interims and let the user insert the syllable in every interim
+        //*maybe just use the original way (create karaoke interims and full subtitle at once), and give the user the opportunity to fix any timing issue by pausing, rewinding and creating a new subtitle. The user will know when a mistake happens by looking at the "current syllable" and noticing a difference between this and the the syllable sang in the video.*
         function selectLineToEdit() {
             srtContainer.addEventListener("click", (e) => {
                 let selectedParClass
@@ -193,6 +269,9 @@
         const editBtn = document.querySelector('.edit-btn')
         const srtContainer = document.querySelector('.srt-container')
         //let currentLineArr = document.querySelector('.youtube-vid')
+        const timerDisplay = document.querySelector('.timer')
+        const stopBtn = document.querySelector('.stop-btn')
+        const reRunSubtitleBtn = document.querySelector('.rerun-subtitle-btn')
         let currentLineArr
         let linesArr = [] // an array (of arrays) of all of the captions that were provided by the user, in the 
         let currentLineArrNoSpaces
@@ -248,22 +327,32 @@
 
 
         })
-        clickEvent = new Event('click')
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "p"){
-                startTimer()
-            }
-        })
+        // clickEvent = new Event('click')
+        // document.addEventListener("keydown", (e) => {
+        //     if (e.key === "p"){
+        //         startTimer()
+        //     }
+        // })
         start.addEventListener("click", () => {
             startTimer()
+            if (isReRun){
+                timeStampRun()
+                isReRun = false
+            }
             timeStamp.focus()
             return
         });
-        start.addEventListener("keydown", timeStampRun);//it was originally timestamp and not start I changed it temporarily
+        //start.addEventListener("keydown", timeStampRun);//it was originally timestamp and not start I changed it temporarily
         timeStamp.addEventListener("click", timeStampRun);
         editBtn.addEventListener('click', () => {
             let selectedParObj = selectLineToEdit()
-        })        
+        })
+        stopBtn.addEventListener('click', stopTimer)
+        reRunSubtitleBtn.addEventListener('click', () => {
+            reRunSubtitle()
+            start.focus()
+        })
+
     </script>
 </body>
 </html>
