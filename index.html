@@ -44,6 +44,7 @@
         <button class="focus-start">focus on start</button>
         <button class="stop-btn">Stop Timer</button>
         <button class="rerun-subtitle-btn">Rerun Last Subtitle</button>
+        <button class="speed-btn">Reduce speed to 0.5</button>
         <p class="current-caption"></p>
     </div>
     <div class="karaoke-lines-container">
@@ -96,7 +97,7 @@
         function startTimer() {
             if (!isRunning){
                 startTime = Date.now() - elapsedTime;
-                timer = setInterval(timerUpdate, 10)
+                timer = setInterval((() => timerUpdate(speed)), 10)
                 isRunning = true
             }
         }
@@ -110,19 +111,17 @@
             if (isFirstTimeStamp){
                 timeStampTimeArr.push(timeStampTime)
                 isFirstTimeStamp = false
-                parCurrentCaption.textContent = linesArr[lineNum][inlineNum]
+                if (linesArr[lineNum]) parCurrentCaption.textContent = linesArr[lineNum][inlineNum]
                 return
             }            
             timeStampDisplay = getTimeStampDisplay(timeStampTime)
             let lastTimeStampDisplay = getTimeStampDisplay(timeStampTimeArr.at(-1))
             karaokeInterim = getKaraokeInterim(timeStampTime, lastTimeStampTime)
-            console.log(`${lastTimeStampDisplay} --- ${timeStampDisplay}`)
             if (linesArr[lineNum]){
                 isEndofLine = linesArr[lineNum].length == inlineNum + 1 
                 currentCaption += `{\\k${karaokeInterim}}${linesArr[lineNum][inlineNum]}`
                 inlineNum += 1
                 parCurrentCaption.textContent = linesArr[lineNum][inlineNum]
-                console.log(currentCaption)
 
                 if (isEndofLine){
                     lineNum += 1;
@@ -149,9 +148,11 @@
                 let pCurrent = document.createElement("p")
                 pArray.push(pCurrent)
                 srtContainer.appendChild(pCurrent)
-                pArray[lineNum].classList.toggle(`p${lineNum + 1}`)
-                pArray[lineNum - 1].innerText +=  ` --> ${timeStampDisplay}\nSubtitle text here\n\n`
-                pArray[lineNum].innerText += `${lineNum+1}\n${timeStampDisplay}`;
+                pArray[lineNum - 1].classList.toggle(`p${lineNum}`)
+                // pArray[lineNum - 1].innerText +=  ` --> ${timeStampDisplay}\nSubtitle text here\n\n`
+                pArray[lineNum - 1].innerText += `${lineNum}\n${lastTimeStampDisplay} --> ${timeStampDisplay}\nSubtitle text here\n\n`
+                timeStampTimeArr.push(timeStampTime)
+                // pArray[lineNum].innerText += `${lineNum+1}\n${timeStampDisplay}`;
             }
 
             
@@ -180,15 +181,15 @@
             let timeStampDisplay = `${hours}:${minutes}:${seconds},${milliseconds}`;
             return timeStampDisplay
         }
-        function stopTimer(){
+        function stopTimer(speed = 1){
             if (isRunning){
                 clearInterval(timer);
-                elapsedTime = Date.now() - startTime;
+                elapsedTime = speed*(Date.now() - startTime)
                 isRunning = false;
             }
         }
-        function timerUpdate() {
-            elapsedTime = Date.now() - startTime
+        function timerUpdate(speed = 1) {
+            elapsedTime = speed*(Date.now() - startTime)
             let humanReadableTime = getTimeStampDisplay(elapsedTime)
             timerDisplay.textContent = humanReadableTime
         }
@@ -270,6 +271,7 @@
         const timerDisplay = document.querySelector('.timer')
         const stopBtn = document.querySelector('.stop-btn')
         const reRunSubtitleBtn = document.querySelector('.rerun-subtitle-btn')
+        const speedBtn = document.querySelector(".speed-btn")
         let currentLineArr
         let linesArr = [] // an array (of arrays) of all of the captions that were provided by the user, in the 
         let currentLineArrNoSpaces
@@ -289,39 +291,39 @@
                     addLyricsToTable(item)
                 } 
             }
-            if (!(lineInput.value == '')) {
-                tableLineNum += 1
-                if ((lineInput.value).includes(";")){
-                    //To add a karaoke break with every space without removing spaces
-                    arrSplitBySpaces = (lineInput.value).split(" ")
-                    for (let i=1; i < arrSplitBySpaces.length; i++){
-                        arrSplitBySpaces[i] = " ;" + arrSplitBySpaces[i]
-                    }
-                    stringWithCorrectCommaDot = arrSplitBySpaces.join("")
-                    currentLineArr = stringWithCorrectCommaDot.split(";")
-                } else {
-                    currentLineArr = (lineInput.value).split(".")
-                }
-                linesArr.push(currentLineArr)
-                let currentTr = document.createElement("tr")
-                table.appendChild(currentTr)
-                let currentTdsObj = {
-                    karLine: "{\\k}" + stringWithCorrectCommaDot.replaceAll(";", "{\\k}"),
-                    regLine: `${currentLineArr.join("")}`,
-                    lineNum: `${tableLineNum}`
-                }
-                infoArr.push(currentTdsObj)
-                let i = 0
-                for (let key in currentTdsObj){
-                    let currentTd = document.createElement("td")
-                    currentTd.classList.toggle(`${tdClasses[i]}`)
-                    i++
-                    //tableLineNum starts with 1, but array index starts with 0, so I subtracted tableLineNum by 1 to get the proper index.
-                    currentTd.textContent = infoArr[tableLineNum - 1][key]
-                    currentTr.appendChild(currentTd)
-                }
-                lineInput.value = ""
-            }
+            // if (!(lineInput.value == '')) {
+            //     tableLineNum += 1
+            //     if ((lineInput.value).includes(";")){
+            //         //To add a karaoke break with every space without removing spaces
+            //         arrSplitBySpaces = (lineInput.value).split(" ")
+            //         for (let i=1; i < arrSplitBySpaces.length; i++){
+            //             arrSplitBySpaces[i] = " ;" + arrSplitBySpaces[i]
+            //         }
+            //         stringWithCorrectCommaDot = arrSplitBySpaces.join("")
+            //         currentLineArr = stringWithCorrectCommaDot.split(";")
+            //     } else {
+            //         currentLineArr = (lineInput.value).split(".")
+            //     }
+            //     linesArr.push(currentLineArr)
+            //     let currentTr = document.createElement("tr")
+            //     table.appendChild(currentTr)
+            //     let currentTdsObj = {
+            //         karLine: "{\\k}" + stringWithCorrectCommaDot.replaceAll(";", "{\\k}"),
+            //         regLine: `${currentLineArr.join("")}`,
+            //         lineNum: `${tableLineNum}`
+            //     }
+            //     infoArr.push(currentTdsObj)
+            //     let i = 0
+            //     for (let key in currentTdsObj){
+            //         let currentTd = document.createElement("td")
+            //         currentTd.classList.toggle(`${tdClasses[i]}`)
+            //         i++
+            //         //tableLineNum starts with 1, but array index starts with 0, so I subtracted tableLineNum by 1 to get the proper index.
+            //         currentTd.textContent = infoArr[tableLineNum - 1][key]
+            //         currentTr.appendChild(currentTd)
+            //     }
+            //     lineInput.value = ""
+            // }
         })
         
 
@@ -362,8 +364,19 @@
 
 
         }
+        
+        let speed = 1
+        speedBtn.addEventListener("click", () => {
+            if (speed == 1){
+                speed = 0.5
+                speedBtn.textContent = "Increase speed to normal"
+            } else {
+                speed = 1
+                speedBtn.textContent = "Reduce speed to 0.5"
+            }
+        })
         start.addEventListener("click", () => {
-            startTimer()
+            startTimer(speed)
             if (isReRun){
                 timeStampRun()
                 isReRun = false
@@ -375,14 +388,15 @@
         focusStartBtn.addEventListener('click', () => {
             start.focus() 
         })
-        stopBtn.addEventListener('click', stopTimer)
+        stopBtn.addEventListener('click', () => {
+            stopTimer(speed)
+        })
         reRunSubtitleBtn.addEventListener('click', () => {
             reRunSubtitle()
             start.focus()
         })
 
         const text = document.querySelector("textarea")
-        console.log((text.value).split(/\r?\n/))
 
     </script>
 </body>
