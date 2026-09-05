@@ -21,16 +21,18 @@
             min-width: 40vw;
         }
         iframe {
-            position: absolute;
-            bottom: 0;
-        }
-        #timeStamp{
-            height: 400px;
-            width: 400px;
-            background-color: grey;
+            display: inline;
         }
         .srt-container p:hover{
             background-color: rgba(0, 0, 0, 0.2);
+        }
+        tr:active {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        .karaoke-lines-container div div{
+            display: flex;
+            gap: 16px;
+            margin: 16px 0;
         }
     </style>
 </head>
@@ -41,18 +43,25 @@
         <button id="timeStamp">timestamp</button>
     </div>
     <div>
-        <button class="focus-start">focus on start</button>
-        <button class="stop-btn">Stop Timer</button>
-        <button class="rerun-subtitle-btn">Rerun Last Subtitle</button>
+        <button class="focus-start">Focus on start</button>
+        <button class="stop-btn">Stop timer</button>
+        <button class="rerun-subtitle-btn">Rerun last subtitle</button>
         <button class="speed-btn">Reduce speed to 0.5</button>
+        <button class="remove-multiple-lines-btn">Remove multiple lines</button>
         <p class="current-caption"></p>
     </div>
     <div class="karaoke-lines-container">
-        <label for="line-num-input">Line Number</label>
-        <input type="number" id="line-num-input" name="line-num-input" class="line-num-input" >
-        <label for="lineInput">Line</label>
-        <input type="text" id="lineInput" name="lineInput" class="lineInput">
-        <button id="appendLineBtn" type="button">Add Line</button>
+        <div>
+            <label for="line-num-input">Line Number</label>
+            <input type="number" id="line-num-input" name="line-num-input" class="line-num-input" >
+            <label for="lineInput">Line</label>
+            <input type="text" id="lineInput" name="lineInput" class="lineInput">
+            <button id="appendLineBtn" type="button">Add Line</button>
+            <div>
+                <textarea name="some" id="some" cols="20" rows="20"></textarea>
+                <iframe width="560" height="315" src="https://www.youtube.com/embed/GBwt04s3DwY?si=NSXv61uQ71Go3dBt" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+        </div>
         <table>
             <tr>
                 <th>הסר שורה</th>
@@ -60,15 +69,11 @@
                 <th>שורות עם אינטרוולים</th>
                 <th>שורות</th>
                 <th>מספר שורה</th>
-
             </tr>
         </table>
-        <p></p>
     </div>
     <div class="lines-container">
-        <iframe width="560" height="315" src="https://www.youtube.com/embed/GBwt04s3DwY?si=NSXv61uQ71Go3dBt" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-        <p ><br></p>
-        <textarea name="some" id="some" cols="20" rows="20"></textarea>
+        
     </div>
     <script>
         //https://youtu.be/d8-LGhKtzRw?si=8LwIS71R9n6ws68p timer
@@ -150,10 +155,8 @@
                 pArray.push(pCurrent)
                 srtContainer.appendChild(pCurrent)
                 pArray[lineNum - 1].classList.toggle(`p${lineNum}`)
-                // pArray[lineNum - 1].innerText +=  ` --> ${timeStampDisplay}\nSubtitle text here\n\n`
                 pArray[lineNum - 1].innerText += `${lineNum}\n${lastTimeStampDisplay} --> ${timeStampDisplay}\nSubtitle text here\n\n`
                 timeStampTimeArr.push(timeStampTime)
-                // pArray[lineNum].innerText += `${lineNum+1}\n${timeStampDisplay}`;
             }
 
             
@@ -271,6 +274,7 @@
         const stopBtn = document.querySelector('.stop-btn')
         const reRunSubtitleBtn = document.querySelector('.rerun-subtitle-btn')
         const speedBtn = document.querySelector(".speed-btn")
+        const removeMultipleLinesBtn = document.querySelector(".remove-multiple-lines-btn")
         let currentLineArr
         let linesArr = [] // an array (of arrays) of all of the captions that were provided by the user, in the 
         let currentLineArrNoSpaces
@@ -360,9 +364,19 @@
             }
         }
 
-        function removeLine(lineNum) {
-            linesArr.splice(lineNum-1, 1)
-            infoArr.splice(lineNum-1, 1)
+        function removeLines(lineNum1, lineNum2 = lineNum1) {
+            if (!linesArr[lineNum1 - 1] || !linesArr[lineNum2 - 1]){
+                alert("line number not found")
+                return
+            }
+            let d = null
+            if (+lineNum1 > +lineNum2){
+                d = +lineNum1 - +lineNum2
+            } else {
+                d = +lineNum2 - +lineNum1
+            }
+            linesArr.splice(lineNum1-1, d + 1)
+            infoArr.splice(lineNum1-1, d + 1)
         }
         
         let speed = 1
@@ -395,6 +409,12 @@
             reRunSubtitle()
             start.focus()
         })
+        removeMultipleLinesBtn.addEventListener("click", () => {
+            const lineNum1 = prompt("remove from line number:")
+            const lineNum2 = prompt("remove until line number:")
+            removeLines(lineNum1, lineNum2)
+            addLyricsToTable()
+        })
 
 
 
@@ -407,8 +427,8 @@
             }
             if (e.target.textContent == "remove") {
                 const lineNum = +e.target.parentElement.lastElementChild.textContent
-                if (confirm("Are you sure you want to remove this line?")){
-                    removeLine(lineNum)
+                if (confirm(`Are you sure you want to remove line number ${lineNum}?`)){
+                    removeLines(lineNum)
                     addLyricsToTable()
                 }
             }            
