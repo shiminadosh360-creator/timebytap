@@ -102,7 +102,8 @@
         let isReRun = false
         function startTimer() {
             if (!isRunning){
-                startTime = Date.now() - elapsedTime;
+	            if (isReRun && speed == 0.5) startTime = Date.now() - 2 * elapsedTime;
+                else startTime = Date.now() - elapsedTime;
                 timer = setInterval((() => timerUpdate(speed)), 10)
                 isRunning = true
             }
